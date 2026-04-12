@@ -2,8 +2,8 @@ import React from 'react';
 
 type UserProps = {
     user: {
-        first_name: string;
-        last_name: string;
+        name: string;
+        loginUser: string;
         email?: string;
     } | null;  // Indicates that user can be an object with user data or null
 };
@@ -11,7 +11,7 @@ type UserProps = {
 const Home: React.FC<UserProps> = ({ user }) => {
   let message;
   if(user){
-    message = `Hi ${user.first_name} ${user.last_name}`;
+    message = `Hi ${user.loginUser} - ${user.name}`;
   } else{
     message = 'You are not logged in!';
   }

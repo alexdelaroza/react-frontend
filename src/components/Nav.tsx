@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 const Nav = ({ user, setLogin }: { user: any, setLogin: (loggedIn: boolean) => void }) => {
   const navigate = useNavigate(); // Hook para redirecionamento
+  console.log("Usuário no Nav:", user);
 
   const logout = async () => {
     try {
@@ -20,11 +21,10 @@ const Nav = ({ user, setLogin }: { user: any, setLogin: (loggedIn: boolean) => v
       navigate('/login');
     } catch (error: any) {
       // Tratamento seguro do erro
-      if (axios.isAxiosError(error) && error.response) {
-        console.error('Erro ao fazer logout:', error.response.data || error.message);
-      } else {
-        console.error('Erro desconhecido ao fazer logout:', error);
-      }
+      console.error('Erro ao fazer logout:', error);
+      localStorage.removeItem('jwt');
+      setLogin(false);
+      navigate('/login');
     }
   };
 
@@ -41,6 +41,12 @@ const Nav = ({ user, setLogin }: { user: any, setLogin: (loggedIn: boolean) => v
   } else {
     links = (
       <ul className="navbar-nav ms-auto">
+        <li className="nav-item">
+          <Link  className="nav-link" to="/servicos">Serviços</Link>
+        </li>
+        <li className="nav-item">
+          <Link className="nav-link" to="/usuarios">Usuários</Link>
+        </li>
         <li className="nav-item">
           <Link className="nav-link" to="/login">Login</Link>
         </li>

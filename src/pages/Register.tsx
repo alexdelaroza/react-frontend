@@ -3,15 +3,15 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const getApiUrl = () => {
-  return process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+  return process.env.REACT_APP_API_URL || 'http://localhost:3000';
 };
 
 const Register: React.FC = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [nome, setNome] = useState('');
+  const [login, setLogin] = useState('');
+  const [senha, setSenha] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [tipo, setTipo] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -24,21 +24,21 @@ const Register: React.FC = () => {
 
     try {
       console.log('Dados do formulário:', {
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        password,
-        confirm_password: confirmPassword,
+        nome: nome,
+        login: login,
+        senha: senha,
+        email: email,
+        tipo: tipo,
       });
 
       const response = await axios.post(
-        `${apiUrl}/api/register`,
+        `${apiUrl}/usuarios`,
         {
-          first_name: firstName,
-          last_name: lastName,
-          email,
-          password,
-          confirm_password: confirmPassword,
+          nome: nome,
+          login: login,
+          senha: senha,
+          email: email,
+          tipo: tipo,
         },
         {
           headers: {
@@ -90,18 +90,28 @@ const Register: React.FC = () => {
       <div className="form-signin">
         <input
           className="form-control"
-          placeholder="First Name"
+          placeholder="Nome"
           required
-          onChange={(e) => setFirstName(e.target.value)}
+          onChange={(e) => setNome(e.target.value)}
         />
       </div>
 
       <div className="form-signin">
         <input
           className="form-control"
-          placeholder="Last Name"
+          placeholder="Login"
           required
-          onChange={(e) => setLastName(e.target.value)}
+          onChange={(e) => setLogin(e.target.value)}
+        />
+      </div>
+
+      <div className="form-signin">
+        <input
+          type="password"
+          className="form-control"
+          placeholder="Senha"
+          required
+          onChange={(e) => setSenha(e.target.value)}
         />
       </div>
 
@@ -117,21 +127,11 @@ const Register: React.FC = () => {
 
       <div className="form-signin">
         <input
-          type="password"
+          type="text"
           className="form-control"
-          placeholder="Password"
+          placeholder="Tipo"
           required
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-
-      <div className="form-signin">
-        <input
-          type="password"
-          className="form-control"
-          placeholder="Confirm Password"
-          required
-          onChange={(e) => setConfirmPassword(e.target.value)}
+          onChange={(e) => setTipo(e.target.value)}
         />
       </div>
 
@@ -139,7 +139,7 @@ const Register: React.FC = () => {
         Register
       </button>
 
-      <p className="mt-5 mb-3 text-body-secondary">&copy; 2024</p>
+      <p className="mt-5 mb-3 text-body-secondary">&copy; 2026</p>
     </form>
   );
 };

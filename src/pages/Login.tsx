@@ -4,12 +4,12 @@ import { Navigate, Link } from 'react-router-dom';
 
 // Função para retornar a URL base da API
 const getApiUrl = () => {
-  return process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+  return process.env.REACT_APP_API_URL || 'http://localhost:3000';
 };
 
-const Login: React.FC<{ setLogin: (loggedIn: boolean) => void }> = ({ setLogin }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const Login: React.FC<{ setLoginOk: (loggedIn: boolean) => void }> = ({ setLoginOk }) => {
+  const [login, setLogin] = useState('');
+  const [senha, setSenha] = useState('');
   const [redirect, setRedirect] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,9 +23,9 @@ const Login: React.FC<{ setLogin: (loggedIn: boolean) => void }> = ({ setLogin }
 
     try {
       console.log('2. Fazendo requisição POST para /login');
-      const response = await axios.post(`${apiUrl}/api/login`, {
-        email,
-        password,
+      const response = await axios.post(`${apiUrl}/login`, {
+        login,
+        senha,
       });
 
       console.log('3. Resposta do login:', response.data);
@@ -44,7 +44,7 @@ const Login: React.FC<{ setLogin: (loggedIn: boolean) => void }> = ({ setLogin }
         axios.defaults.headers.common = headers;
         console.log('6. Token configurado no axios:', headers);
 
-        setLogin(true);
+        setLoginOk(true);
         setRedirect(true);
       }
     } catch (error: any) {
@@ -77,15 +77,14 @@ const Login: React.FC<{ setLogin: (loggedIn: boolean) => void }> = ({ setLogin }
           {error}
         </div>
       )}
-
+      
       <div className="form-signin">
         <input
-          type="email"
           className="form-control"
-          placeholder="name@example.com"
+          placeholder="Login"
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={login}
+          onChange={(e) => setLogin(e.target.value)}
         />
       </div>
 
@@ -93,13 +92,13 @@ const Login: React.FC<{ setLogin: (loggedIn: boolean) => void }> = ({ setLogin }
         <input
           type="password"
           className="form-control"
-          placeholder="Password"
+          placeholder="Senha"
           required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
         />
         <div className="mb-3">
-          <Link to="/forgot">Forgot Password?</Link>
+          <Link to="/forgot">Forgot Senha?</Link>
         </div>
       </div>
 
@@ -107,7 +106,7 @@ const Login: React.FC<{ setLogin: (loggedIn: boolean) => void }> = ({ setLogin }
         Sign in
       </button>
 
-      <p className="mt-5 mb-3 text-body-secondary">&copy; 2024</p>
+      <p className="mt-5 mb-3 text-body-secondary">&copy; 2026</p>
     </form>
   );
 };
