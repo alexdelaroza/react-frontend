@@ -3,81 +3,62 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 
 const Nav = ({ user, setLogin }: { user: any, setLogin: (loggedIn: boolean) => void }) => {
-  const navigate = useNavigate(); // Hook para redirecionamento
-  console.log("Usuário no Nav:", user);
+  const navigate = useNavigate();
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
+  const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:3000";
+
+  const handleNavCollapse = () => setIsNavCollapsed(!isNavCollapsed);
 
   const logout = async () => {
     try {
-      // Requisição ao backend para realizar o logout
-      await axios.post('logout', {});
-
-      // Remove o token do localStorage
+      const token = localStorage.getItem('jwt');
+      await axios.post(`${apiBaseUrl}/logout`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (error) {
+      console.error('Logout local efetuado.');
+    } finally {
       localStorage.removeItem('jwt');
-
-      // Atualiza o estado para deslogado
-      setLogin(false);
-
-      // Redireciona para a página de login
-      navigate('/login');
-    } catch (error: any) {
-      // Tratamento seguro do erro
-      console.error('Erro ao fazer logout:', error);
-      localStorage.removeItem('jwt');
+      delete axios.defaults.headers.common['Authorization'];
       setLogin(false);
       navigate('/login');
     }
   };
 
-  let links;
-  if (user) {
-    links = (
-      <ul className="navbar-nav ms-auto">
-        <li className="nav-item">
-          {/* Botão de logout */}
-          <Link className="nav-link" to="#" onClick={logout}>Logout</Link>
-        </li>
-      </ul>
-    );
-  } else {
-    links = (
-      <ul className="navbar-nav ms-auto">
-        <li className="nav-item">
-          <Link  className="nav-link" to="/servicos">Serviços</Link>
-        </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/usuarios">Usuários</Link>
-        </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/login">Login</Link>
-        </li>
-        <li className="nav-item">
-          <Link className="nav-link" to="/register">Register</Link>
-        </li>
-      </ul>
-    );
-  }
-
-  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
-  const handleNavCollapse = () => setIsNavCollapsed(!isNavCollapsed);
-
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div className="container-fluid">
-        <Link className="navbar-brand" to="/">Home</Link>
-        <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded={!isNavCollapsed}
-          aria-label="Toggle navigation"
-          onClick={handleNavCollapse}
-        >
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+      <div className="container">
+        {/* Logo como Menu */}
+        <Link className="navbar-brand fw-bold" to="/">
+          <span className="text-primary">☰</span> Menu
+        </Link>
+
+        <button className="navbar-toggler" type="button" onClick={handleNavCollapse}>
           <span className="navbar-toggler-icon"></span>
         </button>
+
         <div className={`${isNavCollapsed ? 'collapse' : ''} navbar-collapse`} id="navbarNav">
-          {links}
+          <ul className="navbar-nav ms-auto align-items-center">
+            {user ? (
+              <>
+                <li className="nav-item">
+                  <span className="nav-link disabled text-light me-3">
+                    Olá, <strong>{user.Nome}</strong>
+                  </span>
+                </li>
+                <li className="nav-item">
+                  <button className="btn btn-outline-danger btn-sm" onClick={logout}>Sair</button>
+                </li>
+              </>
+            ) : (
+              <>
+                {/* Apenas opção de Entrar disponível */}
+                <li className="nav-item">
+                  <Link className="nav-link" to="/login">Entrar</Link>
+                </li>
+              </>
+            )}
+          </ul>
         </div>
       </div>
     </nav>

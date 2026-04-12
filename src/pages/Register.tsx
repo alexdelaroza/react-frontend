@@ -1,29 +1,28 @@
 import React, { useState, SyntheticEvent } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-
-const getApiUrl = () => {
-  return process.env.REACT_APP_API_URL || 'http://localhost:3000';
-};
+import { useNavigate, Link } from 'react-router-dom';
 
 const Register: React.FC = () => {
   const [nome, setNome] = useState('');
   const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
   const [email, setEmail] = useState('');
-  const [tipo, setTipo] = useState('');
+  const [tipo, setTipo] = useState('user');
+  
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
   const submit = async (e: SyntheticEvent) => {
     e.preventDefault();
     setError('');
-
-    const apiUrl = getApiUrl();
-    console.log('Tentando registrar com URL:', apiUrl);
+    setLoading(true);
 
     try {
-      console.log('Dados do formulário:', {
+      await axios.post(`${apiUrl}/usuarios`, {
         nome: nome,
         login: login,
         senha: senha,
@@ -31,116 +30,127 @@ const Register: React.FC = () => {
         tipo: tipo,
       });
 
-      const response = await axios.post(
-        `${apiUrl}/usuarios`,
-        {
-          nome: nome,
-          login: login,
-          senha: senha,
-          email: email,
-          tipo: tipo,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          withCredentials: true,
-        }
-      );
-
-      console.log('Resposta do servidor:', {
-        status: response.status,
-        statusText: response.statusText,
-        data: response.data,
-      });
-
-      if (response.status === 200 || response.status === 201) {
-        console.log('Registro bem sucedido, redirecionando...');
-        navigate('/login'); // Redireciona diretamente
-      }
-    } catch (error: any) {
-      console.log('Erro detalhado:', error);
-
-      if (error.response) {
-        const errorMsg = error.response.data.message || 'Registration failed';
-        console.log('Mensagem de erro:', errorMsg);
-        setError(errorMsg);
-      } else if (error.request) {
-        setError('No response from server');
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err: any) {
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || err.response.data.error || 'Erro ao registrar');
       } else {
-        setError('Error during registration');
+        setError('Servidor indisponível no momento.');
       }
-
-      if (process.env.REACT_APP_LOG_LEVEL === 'debug') {
-        console.error('Registration error:', error);
-      }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form className="form-floating" onSubmit={submit}>
-      <h1 className="h3 mb-3 fw-normal">Please register</h1>
+    <div className="container mt-5" style={{ maxWidth: '500px' }}>
+      <div className="card shadow-sm border-dark p-4">
+        <h2 className="text-center mb-4 fw-bold">Criar Conta</h2>
 
-      {error && (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      )}
+        {success && (
+          <div className="alert alert-success text-center shadow-sm">
+            ✅ Conta criada com sucesso! Redirecionando...
+          </div>
+        )}
 
-      <div className="form-signin">
-        <input
-          className="form-control"
-          placeholder="Nome"
-          required
-          onChange={(e) => setNome(e.target.value)}
-        />
+        {error && (
+          <div className="alert alert-danger py-2 text-center shadow-sm" role="alert">
+            <small>{error}</small>
+          </div>
+        )}
+
+        <form onSubmit={submit}>
+          <div className="mb-3">
+            <label className="form-label small fw-bold text-secondary">Nome Completo</label>
+            <input
+              className="form-control form-control-lg"
+              placeholder="Ex: João Silva"
+              required
+              onChange={(e) => setNome(e.target.value)}
+            />
+          </div>
+
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <label className="form-label small fw-bold text-secondary">Login</label>
+              <input
+                className="form-control"
+                placeholder="usuario123"
+                required
+                onChange={(e) => setLogin(e.target.value)}
+              />
+            </div>
+            <div className="col-md-6 mb-3">
+              <label className="form-label small fw-bold text-secondary">Senha</label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="******"
+                required
+                onChange={(e) => setSenha(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label small fw-bold text-secondary">E-mail</label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="email@exemplo.com"
+              required
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="form-label small fw-bold text-secondary">Tipo de Perfil</label>
+            <select 
+              className="form-select" 
+              value={tipo} 
+              onChange={(e) => setTipo(e.target.value)}
+            >
+              <option value="user">Usuário Padrão</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+
+          {/* Seção de Botões Melhorada: Empilhados e com Hierarquia */}
+          <div className="d-flex flex-column gap-2 mb-4">
+            <button 
+              className="btn btn-dark btn-lg shadow-sm w-100 fw-bold" 
+              type="submit" 
+              disabled={loading || success}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Processando...
+                </>
+              ) : (
+                'Confirmar Cadastro'
+              )}
+            </button>
+            
+            <button 
+              type="button" 
+              className="btn btn-link text-decoration-none text-secondary btn-sm w-100" 
+              onClick={() => navigate('/usuarios/menu')}
+            >
+              Cancelar e Voltar
+            </button>
+          </div>
+
+          <div className="text-center pt-3 border-top">
+            <span className="small text-muted">Já tem uma conta? </span>
+            <Link to="/login" className="small text-decoration-none fw-bold text-dark">Entrar</Link>
+          </div>
+        </form>
       </div>
-
-      <div className="form-signin">
-        <input
-          className="form-control"
-          placeholder="Login"
-          required
-          onChange={(e) => setLogin(e.target.value)}
-        />
-      </div>
-
-      <div className="form-signin">
-        <input
-          type="password"
-          className="form-control"
-          placeholder="Senha"
-          required
-          onChange={(e) => setSenha(e.target.value)}
-        />
-      </div>
-
-      <div className="form-signin">
-        <input
-          type="email"
-          className="form-control"
-          placeholder="name@example.com"
-          required
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-
-      <div className="form-signin">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Tipo"
-          required
-          onChange={(e) => setTipo(e.target.value)}
-        />
-      </div>
-
-      <button className="form-signin btn btn-primary w-100 py-2" type="submit">
-        Register
-      </button>
-
-      <p className="mt-5 mb-3 text-body-secondary">&copy; 2026</p>
-    </form>
+      
+      <p className="text-center mt-4 text-muted small">&copy; 2026 API-Manager</p>
+    </div>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -17,104 +17,100 @@ const ServiceList: React.FC = () => {
 
   const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
-  useEffect(() => {
-    const fetchServicos = async () => {
-      const token = localStorage.getItem('jwt');
-      try {
-        const response = await axios.get(`${apiUrl}/servicos`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        // Acessando a chave "services" do seu JSON
-        if (response.data && Array.isArray(response.data.services)) {
-          setServicos(response.data.services);
-        } else {
-          setServicos([]);
-        }
-      } catch (err) {
-        setError('Erro ao carregar serviços');
-      } finally {
-        setLoading(false);
+  const fetchServicos = useCallback(async () => {
+    const token = localStorage.getItem('jwt');
+    setLoading(true);
+    try {
+      const response = await axios.get(`${apiUrl}/servicos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const lista = response.data.services || response.data.service || response.data.user || response.data;
+      
+      if (Array.isArray(lista)) {
+        setServicos(lista);
+      } else {
+        setServicos([]);
       }
-    };
-
-    fetchServicos();
+    } catch (err: any) {
+      setError('Erro ao carregar serviços');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, [apiUrl]);
 
-  if (loading) return <div className="container mt-5">Carregando serviços...</div>;
+  useEffect(() => {
+    fetchServicos();
+  }, [fetchServicos]);
 
   const deleteService = async (codigo: string) => {
-    // Pergunta ao usuário antes de deletar
-    if (!window.confirm(`Deseja realmente excluir o serviço #${codigo}?`)) return;
-
+    if (!window.confirm(`Deseja excluir o serviço #${codigo}?`)) return;
     const token = localStorage.getItem('jwt');
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-
     try {
-        // 1. Envia a requisição para o Go
-        // Ajuste a URL conforme sua rota: /servicos/:id ou /servicos/:codigo
-        await axios.delete(`${apiUrl}/servicos/${codigo}`, {
+      await axios.delete(`${apiUrl}/servicos/list/${codigo}`, {
         headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // 2. Se deu certo na API, remove da lista no React (Estado)
-        setServicos(servicos.filter(s => s.Codigo !== codigo));
-        
-        alert('Serviço excluído com sucesso!');
+      });
+      setServicos(servicos.filter(s => s.Codigo !== codigo));
     } catch (err: any) {
-        console.error(err);
-        const msg = err.response?.data?.error || 'Erro ao excluir o serviço';
-        alert(msg);
+      alert('Erro ao excluir');
     }
-};
+  };
+
+  if (loading) return <div className="container mt-5 text-center">Carregando...</div>;
 
   return (
     <div className="container mt-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Consulta de Serviços</h2>
+        <div>
+          <h2 className="mb-0 text-dark">Consulta de Serviços</h2>
+          {/* BOTÃO VOLTAR REVISADO COM CAMINHO ABSOLUTO FORÇADO */}
+          <button 
+            type="button"
+            className="btn btn-link text-decoration-none p-0 text-secondary" 
+            onClick={() => {
+                console.log("Tentando navegar para /servicos/menu");
+                navigate('/servicos/menu');
+            }}
+          >
+            ← Voltar para Gestão de Serviços
+          </button>
+        </div>
+        
         <button className="btn btn-success" onClick={() => navigate('/servicos/novo')}>
           + Novo Serviço
         </button>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
-      <table className="table table-hover mt-4">
-        <thead className="table-dark">
-          <tr>
-            <th>Código</th>
-            <th>Descrição</th>
-            <th>Valor</th>
-            <th>Data Cadastro</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {servicos.map((s) => (
-            <tr key={s.Codigo}>
-              <td>{s.Codigo}</td>
-              <td>{s.Descricao}</td>
-              <td>{s.Valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-              <td>{new Date(s.Data_criacao_atu).toLocaleDateString('pt-BR')}</td>
-              <td>
-                <button 
-                    className="btn btn-sm btn-warning me-2" 
-                    onClick={() => navigate(`/servicos/editar/${s.Codigo}`)}
-                >
-                    Alterar
-                </button>
-                <button 
-                    className="btn btn-sm btn-danger"
-                    onClick={() => deleteService(s.Codigo)}
-                >
-                    Excluir
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
 
-      {servicos.length === 0 && !error && <p className="text-center">Nenhum serviço cadastrado.</p>}
+      <div className="table-responsive">
+        <table className="table table-hover mt-4 border shadow-sm">
+          <thead className="table-dark">
+            <tr>
+              <th>Código</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Data</th>
+              <th className="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {servicos.map((s) => (
+              <tr key={s.Codigo}>
+                <td>{s.Codigo}</td>
+                <td><strong>{s.Descricao}</strong></td>
+                <td>{(s.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                <td>{new Date(s.Data_criacao_atu).toLocaleDateString('pt-BR')}</td>
+                <td className="text-center">
+                  <button className="btn btn-sm btn-warning me-2" onClick={() => navigate(`/servicos/editar/${s.Codigo}`)}>Alterar</button>
+                  <button className="btn btn-sm btn-danger" onClick={() => deleteService(s.Codigo)}>Excluir</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

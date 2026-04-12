@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const UserEdit: React.FC = () => {
-    const { id } = useParams();
+    const { id } = useParams(); 
     const navigate = useNavigate();
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
@@ -13,32 +13,36 @@ const UserEdit: React.FC = () => {
     const [email, setEmail] = useState('');
     const [tipo, setTipo] = useState('');
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(''); // Estado para a mensagem de erro
+    const [error, setError] = useState(''); // Adicionado para mensagens do backend
 
     useEffect(() => {
         const token = localStorage.getItem('jwt');
+        
         axios.get(`${apiUrl}/usuarios/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
         })
         .then(res => {
+            // Garante que pega do objeto 'user' retornado pelo seu Go
             const u = res.data.user;
-            setNome(u.Nome || '');
-            setLogin(u.Login || '');
-            setSenha(u.Senha || '');
-            setEmail(u.Email || '');
-            setTipo(u.Tipo || '');
+            if (u) {
+                setNome(u.Nome || '');
+                setLogin(u.Login || '');
+                setSenha(u.Senha || '');
+                setEmail(u.Email || '');
+                setTipo(u.Tipo || '');
+            }
             setLoading(false);
         })
         .catch(err => {
             console.error("Erro ao carregar usuário:", err);
-            setError("Não foi possível carregar os dados do usuário.");
-            setLoading(false);
+            // Se der erro 401 ou 404, volta para a lista
+            navigate('/usuarios');
         });
-    }, [id, apiUrl]);
+    }, [id, apiUrl, navigate]);
 
     const submit = async (e: SyntheticEvent) => {
         e.preventDefault();
-        setError(''); // Limpa erros anteriores
+        setError('');
         const token = localStorage.getItem('jwt');
 
         try {
@@ -53,37 +57,27 @@ const UserEdit: React.FC = () => {
             });
 
             alert('Usuário atualizado com sucesso!');
-            navigate('/usuarios');
+            navigate('/usuarios'); 
         } catch (err: any) {
             console.error(err);
-            // LÓGICA PARA TRAZER A MSG DO BACKEND:
-            if (err.response && err.response.data) {
-                // Tenta pegar 'error' ou 'message' do JSON enviado pelo Go
-                const backendMsg = err.response.data.error || err.response.data.message || 'Erro ao atualizar usuário.';
-                setError(backendMsg);
-            } else {
-                setError('Erro de conexão com o servidor.');
-            }
+            // Captura a mensagem real do seu backend em Go
+            const msg = err.response?.data?.error || err.response?.data?.message || 'Erro ao atualizar usuário.';
+            setError(msg);
         }
     };
 
-    if (loading) return <div className="container mt-5">Carregando dados...</div>;
+    if (loading) return <div className="container mt-5 text-center">Carregando dados...</div>;
 
     return (
-        <div className="container mt-5">
-            <div className="card shadow p-4">
+        <div className="container mt-5" style={{ maxWidth: '700px' }}>
+            <div className="card shadow-sm border-dark p-4">
                 <h2 className="mb-4">Alterar Usuário #{id}</h2>
 
-                {/* EXIBIÇÃO DA MENSAGEM DE ERRO DO BACKEND */}
-                {error && (
-                    <div className="alert alert-danger" role="alert">
-                        {error}
-                    </div>
-                )}
+                {error && <div className="alert alert-danger py-2">{error}</div>}
 
                 <form onSubmit={submit}>
                     <div className="mb-3">
-                        <label className="form-label">Nome Completo</label>
+                        <label className="form-label small fw-bold">Nome Completo</label>
                         <input 
                             className="form-control" 
                             value={nome} 
@@ -94,7 +88,7 @@ const UserEdit: React.FC = () => {
 
                     <div className="row">
                         <div className="col-md-6 mb-3">
-                            <label className="form-label">Login</label>
+                            <label className="form-label small fw-bold">Login</label>
                             <input 
                                 className="form-control" 
                                 value={login} 
@@ -103,7 +97,7 @@ const UserEdit: React.FC = () => {
                             />
                         </div>
                         <div className="col-md-6 mb-3">
-                            <label className="form-label">Senha (Nova ou Atual)</label>
+                            <label className="form-label small fw-bold">Senha (Nova ou Atual)</label>
                             <input 
                                 type="password"
                                 className="form-control" 
@@ -115,7 +109,7 @@ const UserEdit: React.FC = () => {
                     </div>
 
                     <div className="mb-3">
-                        <label className="form-label">E-mail</label>
+                        <label className="form-label small fw-bold">E-mail</label>
                         <input 
                             type="email"
                             className="form-control" 
@@ -125,8 +119,8 @@ const UserEdit: React.FC = () => {
                         />
                     </div>
 
-                    <div className="mb-3">
-                        <label className="form-label">Tipo de Acesso</label>
+                    <div className="mb-4">
+                        <label className="form-label small fw-bold">Tipo de Acesso</label>
                         <select 
                             className="form-select" 
                             value={tipo} 
@@ -139,11 +133,24 @@ const UserEdit: React.FC = () => {
                         </select>
                     </div>
 
-                    <div className="mt-4">
-                        <button type="submit" className="btn btn-primary me-2">Salvar Alterações</button>
-                        <button type="button" className="btn btn-secondary" onClick={() => navigate('/usuarios')}>Cancelar</button>
+                    <div className="d-flex justify-content-between">
+                        <button type="button" className="btn btn-secondary" onClick={() => navigate('/usuarios')}>
+                            Cancelar
+                        </button>
+                        <button type="submit" className="btn btn-dark">
+                            Salvar Alterações
+                        </button>
                     </div>
                 </form>
+            </div>
+            
+            <div className="text-center mt-4">
+                <button 
+                    className="btn btn-link text-decoration-none text-secondary" 
+                    onClick={() => navigate('/usuarios/menu')}
+                >
+                    ← Voltar para Menu de Usuários
+                </button>
             </div>
         </div>
     );
