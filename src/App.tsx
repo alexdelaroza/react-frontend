@@ -8,73 +8,94 @@ import Register from "./pages/Register";
 import Forgot from "./pages/Forgot";
 import Reset from "./pages/Reset";
 import Nav from "./components/Nav";
-import { startHealthCheck } from "./utils/healthCheck";
+import UserMenu from "./pages/UserMenu";
+import UserList from "./pages/UserList"; 
+import UserEdit from "./pages/UserEdit"; 
+import ServiceMenu from "./pages/ServiceMenu";
+import ServiceList from "./pages/ServiceList";
+import ServiceEdit from "./pages/ServiceEdit";
+import ServiceCreate from "./pages/ServiceCreate";
+import LogList from "./pages/LogList";
 
-  interface User {
-    id: number;
-    first_name: string;
-    last_name: string;
-    email: string;
-  }
+// Interface baseada no que o seu banco de dados retorna
+interface User {
+  Nome: string;
+  Login: string;
+  Email?: string;
+  Codigo?: string;
+}
 
-  function App() {
-    const [user, setUser] = useState<User | null>(null);
-    const [login, setLogin] = useState(false);
-  
-    // Configuração global do axios
-    axios.defaults.withCredentials = true;
-    const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
-  
-    // Health Check Effect
-    useEffect(() => {
-      startHealthCheck();
-    }, []);
-  
-    // User Authentication Effect
-    useEffect(() => {
-      const token = localStorage.getItem("jwt");
-  
-      if (token) {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "*/*",
-            "Content-Type": "application/json",
-          },
-        };
-  
-        console.log("Fetching user with token:", token);
-        console.log("URL usada:", `${apiBaseUrl}/api/user`);
-  
-        axios
-          .get(`${apiBaseUrl}/api/user`, config)
-          .then((response) => {
-            console.log("Resposta da API /user:", response.data);
+function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [login, setLoginOk] = useState(false);
+
+  // Define a porta do Go (3000 conforme conversamos)
+  const apiBaseUrl = process.env.REACT_APP_API_URL || "http://localhost:3000";
+
+  // Efeito de autenticação: Busca o usuário logado
+  useEffect(() => {
+    const token = localStorage.getItem("jwt");
+
+    if (token) {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      };
+
+      // Rota alterada para bater com o seu backend Go: app.Get("/user", ...)
+      axios
+        .get(`${apiBaseUrl}/user`, config)
+        .then((response) => {
+          console.log("Usuário autenticado com sucesso:", response.data);
+          
+          // Captura o objeto dentro da chave 'user' enviada pelo Go
+          if (response.data && response.data.user) {
+            setUser(response.data.user);
+          } else {
             setUser(response.data);
-          })
-          .catch((error) => {
-            console.error("Erro ao buscar o usuário:", error);
-            setUser(null);
-            localStorage.removeItem("jwt");
-          });
-      }
-    }, [login, apiBaseUrl]);
+          }
+        })
+        .catch((error) => {
+          console.error("Erro na validação do token:", error);
+          setUser(null);
+          localStorage.removeItem("jwt");
+        });
+    } else {
+      setUser(null);
+    }
+  }, [login, apiBaseUrl]);
 
-    return (
-      <div className="App">
-        <Router>
-          <Nav user={user} setLogin={() => setLogin(false)} />
-          <Routes>
-            <Route path="/login" element={<Login setLogin={() => setLogin(true)} />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot" element={<Forgot />} />
-            <Route path="/reset/:token" element={<Reset />} />
-            <Route path="/" element={<Home user={user} />} />
-            <Route path="*" element={<Home user={user} />} />
-          </Routes>
-        </Router>
-      </div>
-    );
-  }
+return (
+    <div className="App">
+      <Router>
+        <Nav user={user} setLogin={() => setLoginOk(false)} />
+        <Routes>
+          <Route path="/login" element={<Login setLoginOk={() => setLoginOk(true)} />} />
+          <Route path="/register" element={<Register />} />
+          
+          <Route path="/usuarios/menu" element={<UserMenu />} />
+          <Route path="/usuarios" element={<UserList />} />
+          <Route path="/usuarios/editar/:id" element={<UserEdit />} />
+          
+          {/* Ajuste importante: mudei para /servicos/lista para evitar o conflito que tivemos */}
+          <Route path="/servicos/menu" element={<ServiceMenu />} />
+          <Route path="/servicos/lista" element={<ServiceList />} />
+          <Route path="/servicos/editar/:id" element={<ServiceEdit />} />
+          <Route path="/servicos/novo" element={<ServiceCreate />} />
 
-  export default App;
+          <Route path="/logs" element={<LogList />} />
+          
+          <Route path="/forgot" element={<Forgot />} />
+          <Route path="/reset/:token" element={<Reset />} />
+          
+          <Route path="/" element={<Home user={user} />} />
+          <Route path="*" element={<Home user={user} />} />
+        </Routes>
+      </Router>
+    </div>
+  );
+}
+
+export default App;
